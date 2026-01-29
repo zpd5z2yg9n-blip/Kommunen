@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Lieferschein - Schulgeräte</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif; max-width:920px; margin:18px auto; padding:18px; background:#f5f5f7; color:#86868b; }
+.container { background:white; padding:24px; border-radius:18px; box-shadow:0 2px 16px rgba(0,0,0,0.08); margin-bottom:20px; }
+@media print { body{background:white;margin:0;padding:0} .container{box-shadow:none;padding:18px;max-width:100%} .no-print{display:none !important} canvas{border:none} input,textarea,select{border:none;border-bottom:1px solid #333;padding:5px 0} }
+.form-group{margin-bottom:16px}
+label{display:block;font-weight:600;margin-bottom:6px;color:#86868b;font-size:13px}
+input,textarea,select{width:100%;padding:12px 16px;border:1px solid #d2d2d7;border-radius:10px;box-sizing:border-box;font-size:16px;background:white;color:#86868b;transition:all 0.2s ease}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#007aff;box-shadow:0 0 0 3px rgba(0,122,255,0.1)}
+select{background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2386868b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px;-webkit-appearance:none;appearance:none}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){ .grid{grid-template-columns:1fr} }
+.signature-container{border:2px dashed #007aff;padding:10px;border-radius:12px;background:#f5f5f7}
+canvas{width:100%;height:160px;border:1px solid #d2d2d7;border-radius:12px;background:#fff;touch-action:none;display:block}
+.button-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+button{padding:14px 20px;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:16px;transition:all 0.2s ease;flex:1;min-width:150px}
+.btn-primary{background:#007aff;color:#fff}
+.btn-primary:hover{background:#0051D5}
+.btn-primary:active{transform:scale(0.98)}
+.btn-secondary{background:#86868b;color:#fff}
+.btn-secondary:hover{background:#6c6c70}
+.btn-danger{background:#007aff;color:#fff}
+.btn-danger:hover{background:#0051D5}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{padding:8px;border:1px solid #d2d2d7;text-align:left;font-size:13px;color:#86868b}
+th{background:#f5f5f7;font-weight:600}
+tr:hover{background:#f5f5f7;cursor:pointer}
+tr.scanned-row{background:#e8f5e9}
+.note{color:#86868b;font-size:13px;margin-top:4px}
+.filename-display{background:#f0f8ff;border:2px solid #007aff;border-radius:10px;padding:12px;font-weight:600;color:#007aff;font-size:15px;word-break:break-all;margin-top:8px}
+.scanner-section{background:#f5f5f7;padding:20px;border-radius:12px;margin-bottom:16px}
+#reader{border-radius:12px;overflow:hidden;margin:16px 0;max-width:100%;border:1px solid #d2d2d7}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.stat-box{background:#f5f5f7;padding:16px;border-radius:12px;text-align:center}
+.stat-number{font-size:28px;font-weight:600;color:#007aff;margin-bottom:4px}
+.stat-label{font-size:13px;color:#86868b}
+.alert{padding:14px 16px;border-radius:10px;margin-bottom:16px;font-size:15px;animation:slideIn 0.3s ease}
+.alert-success{background:#E8F5E9;color:#2E7D32}
+.alert-info{background:#E3F2FD;color:#1976D2}
+.alert-warning{background:#FFF3E0;color:#E65100}
+.hidden{display:none}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+h3{color:#86868b;font-size:17px;font-weight:600;margin-bottom:12px}
+.scan-badge{display:inline-block;background:#4CAF50;color:white;padding:2px 6px;border-radius:4px;font-size:11px;margin-left:4px}
+@media (max-width:768px){button{width:100%;min-width:auto}}
+.ios-info{background:#fff3cd;border:2px solid:#ffc107;padding:12px;border-radius:10px;margin-bottom:16px;font-size:14px;color:#856404}
+</style>
+</head>
+<body>
+<div class="container" id="pdfRoot">
+
+<div style="text-align:center;border-bottom:3px solid #007aff;padding-bottom:12px;margin-bottom:16px;">
+  <img src="logo.png" alt="Logo" style="max-height:80px;margin-bottom:8px">
+</div>
+
+<form id="deliveryForm" onsubmit="return false;">
+
+<div class="grid">
+  <div class="form-group">
+    <label for="city">Stadt *</label>
+    <select id="city" required>
+      <option value="">Bitte Stadt wählen</option>
+      <option value="Neuss">Neuss</option>
+      <option value="Jüchen">Jüchen</option>
+      <option value="Grevenbroich">Grevenbroich</option>
+      <option value="Kaarst">Kaarst</option>
+      <option value="Meerbusch">Meerbusch</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="docType">Typ *</label>
+    <select id="docType" required>
+      <option value="">Bitte auswählen</option>
+      <option value="LS">LS (Lieferschein)</option>
+      <option value="AB">AB (Abholung)</option>
+    </select>
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="schoolName">Schulname *</label>
+  <select id="schoolName" required>
+    <option value="">Bitte Schule auswählen</option>
+    <optgroup label="🏫 Neuss">
+      <option value="Adolf-Clarenbach-Schule">Adolf-Clarenbach-Schule</option>
+      <option value="Albert-Schweitzer-Schule">Albert-Schweitzer-Schule</option>
+      <option value="Alexander-v.-Humboldt-Gymnasium">Alexander-v.-Humboldt-Gymnasium</option>
+      <option value="Burgunderschule">Burgunderschule</option>
+      <option value="Comenius-Schule">Comenius-Schule</option>
+      <option value="Die-Brücke">Die Brücke</option>
+      <option value="Dreikönigenschule">Dreikönigenschule</option>
+      <option value="Friedrich-von-Bodelschwingh-Schule">Friedrich-von-Bodelschwingh-Schule</option>
+      <option value="Ganztagsrealschule-Norf">Ganztagsrealschule Norf</option>
+      <option value="Gebrüder-Grimm-Schule">Gebrüder-Grimm-Schule</option>
+      <option value="Gesamtschule-an-der-Erft">Gesamtschule an der Erft</option>
+      <option value="Gesamtschule-Nordstadt">Gesamtschule Nordstadt</option>
+      <option value="Gesamtschule-Norf">Gesamtschule Norf</option>
+      <option value="Geschwister-Scholl-Grundschule">Geschwister-Scholl-Grundschule</option>
+      <option value="Görresschule">Görresschule</option>
+      <option value="Grundschule-Allerheiligen">Grundschule Allerheiligen</option>
+      <option value="Gymnasium-Norf">Gymnasium Norf</option>
+      <option value="Herbert-Karrenberg-Schule">Herbert-Karrenberg-Schule</option>
+      <option value="Janusz-Korczak-Gesamtschule">Janusz-Korczak-Gesamtschule</option>
+      <option value="Karl-Kreiner-Schule">Karl-Kreiner-Schule</option>
+      <option value="Kreuzschule">Kreuzschule</option>
+      <option value="Kyburg">Kyburg</option>
+      <option value="Leoschule">Leoschule</option>
+      <option value="Marie-Curie-Gymnasium">Marie-Curie-Gymnasium</option>
+      <option value="Martin-Luther-Schule">Martin-Luther-Schule</option>
+      <option value="Martinus-Schule-Holzheim">Martinus-Schule Holzheim</option>
+      <option value="Maximilian-Kolbe-Schule">Maximilian-Kolbe-Schule</option>
+      <option value="Münsterschule">Münsterschule</option>
+      <option value="Nelly-Sachs-Gymnasium">Nelly-Sachs-Gymnasium</option>
+      <option value="Pestalozzischule">Pestalozzischule</option>
+      <option value="Quirinus-Gymnasium">Quirinus-Gymnasium</option>
+      <option value="Realschule-Holzheim">Realschule Holzheim</option>
+      <option value="Rita-Süssmuth-Realschule">Rita-Süssmuth-Realschule</option>
+      <option value="Realschule-Südstadt">Realschule Südstadt</option>
+      <option value="Richard-Schirrman-Schule">Richard-Schirrman-Schule</option>
+      <option value="Sekundarschule-Neuss">Sekundarschule Neuss</option>
+      <option value="St.-Andreas-Schule">St.-Andreas-Schule</option>
+      <option value="St.-Hubertus-Schule">St.-Hubertus-Schule</option>
+      <option value="St.-Konrad-Schule">St.-Konrad-Schule</option>
+      <option value="St.-Martinus-Schule">St.-Martinus-Schule</option>
+      <option value="St.-Stephanus-Schule">St.-Stephanus-Schule</option>
+      <option value="St.Peter-Schule">St.Peter-Schule</option>
+      <option value="Theodor-Schwann-Kolleg">Theodor-Schwann-Kolleg</option>
+    </optgroup>
+    <optgroup label="🏫 Jüchen">
+      <option value="Gemeinschaftsgrundschule-Jüchen">Gemeinschaftsgrundschule Jüchen</option>
+      <option value="Gesamtschule-Standort-Jüchen">Gesamtschule - Standort Jüchen</option>
+      <option value="GS-Hochneukirch-Otzenrath">GS Hochneukirch-Otzenrath</option>
+      <option value="Gymnasium-Jüchen">Gymnasium Jüchen</option>
+      <option value="Lindenschule">Lindenschule</option>
+    </optgroup>
+    <optgroup label="🏫 Grevenbroich">
+      <option value="Gesamtschule-Grevenbroich">Gesamtschule Grevenbroich</option>
+      <option value="Diedrich-Uhlhorn-Realschule">Diedrich-Uhlhorn-Realschule</option>
+      <option value="Erasmus-Gymnasium">Erasmus-Gymnasium</option>
+      <option value="Erich-Kästner-Schule">Erich Kästner-Schule</option>
+      <option value="Gebrüder-Grimm-Grundschule-GV">Gebrüder-Grimm-Grundschule</option>
+      <option value="GGS-Kapellen">GGS Kapellen</option>
+      <option value="Grundschule-Am-Welchenberg">Grundschule Am Welchenberg</option>
+      <option value="Grundschule-Arche-Noah">Grundschule Arche Noah</option>
+      <option value="Grundschule-Erftaue">Grundschule Erftaue</option>
+      <option value="Grundschule-St-Josef">Grundschule St. Josef</option>
+      <option value="ITK-ITaS-Lab">ITK ITaS Lab</option>
+      <option value="Jakobus-Schule">Jakobus-Schule</option>
+      <option value="Käthe-Kollwitz-Gesamtschule">Käthe-Kollwitz-Gesamtschule</option>
+      <option value="Pascal-Gymnasium">Pascal-Gymnasium</option>
+      <option value="Stadtbücherei-Grevenbroich">Stadtbücherei</option>
+      <option value="Städtische-Katholische-Grundschule-St-Martin">Städtische Katholische Grundschule St. Martin</option>
+      <option value="Viktoria-Schule">Viktoria-Schule</option>
+      <option value="Wilhelm-von-Humboldt-Gesamtschule">Wilhelm-von-Humboldt-Gesamtschule</option>
+    </optgroup>
+    <optgroup label="🏫 Kaarst">
+      <option value="Albert-Einstein-Gymnasium">Albert-Einstein-Gymnasium</option>
+      <option value="Astrid-Lindgren-Schule">Astrid-Lindgren-Schule</option>
+      <option value="Emmy-Noether-Gesamtschule-Kaarst">Emmy-Noether-Gesamtschule Kaarst</option>
+      <option value="Gemeinschaftsgrundschule-Stakerseite">Gemeinschaftsgrundschule Stakerseite</option>
+      <option value="Gemeinschaftsgrundschule-Vorst">Gemeinschaftsgrundschule Vorst</option>
+      <option value="Georg-Büchner-Gymnasium">Georg-Büchner-Gymnasium</option>
+      <option value="Grundschule-Budica">Grundschule Budica</option>
+      <option value="Katholische-Grundschule-Kaarst">Katholische Grundschule Kaarst</option>
+      <option value="Matthias-Claudius-Schule">Matthias-Claudius-Schule</option>
+      <option value="Realschule-Kaarst">Realschule Kaarst</option>
+    </optgroup>
+    <optgroup label="🏫 Meerbusch">
+      <option value="Adam-Riese-Schule">Adam-Riese-Schule</option>
+      <option value="Brüder-Grimm-Schule">Brüder-Grimm-Schule</option>
+      <option value="Eichendorff-Schule">Eichendorff-Schule</option>
+      <option value="Maria-Montessori-Gesamtschule">Maria-Montessori-Gesamtschule</option>
+      <option value="Martinus-Schule-Meerbusch">Martinus-Schule</option>
+      <option value="Mataré-Gymnasium">Mataré-Gymnasium</option>
+      <option value="Mauritius-Schule">Mauritius-Schule</option>
+      <option value="Meerbusch-Gymnasium">Meerbusch-Gymnasium</option>
+      <option value="Nikolaus-Schule">Nikolaus-Schule</option>
+      <option value="Pastor-Jacobs-Schule">Pastor-Jacobs-Schule</option>
+      <option value="Realschule-Osterath">Realschule Osterath</option>
+    </optgroup>
+  </select>
+  <div class="filename-display" id="filenameDisplay">📄 Dateiname wird automatisch generiert...</div>
+</div>
+
+<!-- iOS Info -->
+<div class="ios-info no-print" id="iosInfo" style="display:none">
+  📱 <strong>iOS/iPad:</strong> PDF wird als Bild-basiertes Dokument erstellt (kompatibel mit allen Geräten)
+</div>
+
+<!-- Scanner Section -->
+<div class="scanner-section no-print">
+  <h3>📷 Barcode Scanner</h3>
+  <div id="alertBox" class="hidden"></div>
+  
+  <div class="stats">
+    <div class="stat-box">
+      <div class="stat-number" id="scannedCount">0</div>
+      <div class="stat-label">Gescannt</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number" id="csvCount">0</div>
+      <div class="stat-label">CSV Import</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number" id="manualCount">0</div>
+      <div class="stat-label">Manuell</div>
+    </div>
+  </div>
+
+  <div class="button-group">
+    <button type="button" id="startScanBtn" class="btn-primary">📷 Scanner Starten</button>
+    <button type="button" id="stopScanBtn" class="btn-danger hidden">⏹️ Scanner Stoppen</button>
+  </div>
+
+  <div id="reader" class="hidden"></div>
+</div>
+
+<!-- Gerätedaten -->
+<div class="grid">
+  <div class="form-group">
+    <label for="serialNumber">Seriennummer</label>
+    <input type="text" id="serialNumber" placeholder="Barcode scannen oder eintippen">
+    <div class="note">Fokus beim Laden aktiviert — einfach scannen.</div>
+  </div>
+  <div class="form-group">
+    <label for="deviceName">Gerätename</label>
+    <input type="text" id="deviceName" placeholder="z. B. iPad Pro 11">
+  </div>
+</div>
+<div class="grid">
+  <div class="form-group">
+    <label for="deliveryDate">Ausgabedatum</label>
+    <input type="date" id="deliveryDate">
+  </div>
+  <div class="form-group">
+    <label for="teacherName">Name des Empfängers</label>
+    <input type="text" id="teacherName" placeholder="Vor- und Nachname">
+  </div>
+</div>
+<div class="form-group">
+  <label for="schoolClass">Klasse / Abteilung</label>
+  <input type="text" id="schoolClass" placeholder="z. B. 5a, Verwaltung">
+</div>
+<div class="form-group">
+  <label for="notes">Bemerkungen</label>
+  <textarea id="notes" rows="3" placeholder="Zusätzliche Informationen, Schäden etc."></textarea>
+</div>
+
+<!-- CSV Import -->
+<div class="form-group no-print">
+  <label for="csvFileInput">📂 CSV hinzufügen (mehrere möglich)</label>
+  <input type="file" id="csvFileInput" accept=".csv">
+  <div class="note">CSV-Format: Seriennummer, Gerätetyp, Schüler, Klasse, Bemerkung</div>
+</div>
+
+<div class="form-group no-print">
+  <div class="button-group">
+    <button type="button" class="btn-primary" onclick="addDeviceToTable()">➕ Gerät zur Liste hinzufügen</button>
+  </div>
+</div>
+
+<!-- Tabelle -->
+<div class="form-group">
+  <h3>Geräte / Seriennummern (<span id="tableCount">0</span>)</h3>
+  <table id="serialsTable">
+    <thead><tr><th>Seriennummer</th><th>Gerätetyp</th><th>Schüler</th><th>Klasse</th><th>Bemerkung</th><th class="no-print">Aktion</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Signature -->
+<div class="form-group">
+  <label>Unterschrift Schule</label>
+  <div class="signature-container">
+    <canvas id="signatureCanvas" width="700" height="160"></canvas>
+    <div class="button-group no-print" style="margin-top:8px">
+      <button type="button" class="btn-danger" onclick="clearSignature()">Unterschrift löschen</button>
+    </div>
+  </div>
+</div>
+
+<div class="button-group no-print" style="margin-top:12px">
+  <button type="button" class="btn-primary" id="savePdfBtn">💾 Als PDF speichern</button>
+  <button type="button" class="btn-primary" id="exportCsvBtn">📊 Als CSV exportieren</button>
+  <button type="button" class="btn-secondary" onclick="resetForm()">🔄 Formular zurücksetzen</button>
+</div>
+
+</form>
+</div>
+
+<script>
+let html5QrCode = null;
+let isScanning = false;
+let scannedCount = 0;
+let csvImportCount = 0;
+let manualCount = 0;
+let scannedBarcodes = new Set();
+let allSerialNumbers = new Set();
+
+// iOS Detection
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+window.addEventListener('load', function(){
+  if(isIOS) {
+    document.getElementById('iosInfo').style.display = 'block';
+  }
+  const sn = document.getElementById('serialNumber'); 
+  if(sn) sn.focus();
+  const delivery = document.getElementById('deliveryDate');
+  if(delivery && !delivery.value) delivery.value = new Date().toISOString().slice(0,10);
+  updateFilenameDisplay();
+  updateStats();
+});
+
+// Dateiname-Generierung
+function generateFilename() {
+  const city = document.getElementById('city').value.trim();
+  const docType = document.getElementById('docType').value.trim();
+  const school = document.getElementById('schoolName').value.trim();
+  
+  if(!city || !docType || !school) return null;
+  
+  const cityMap = {
+    'Neuss': 'NE',
+    'Jüchen': 'JÜ',
+    'Grevenbroich': 'GV',
+    'Kaarst': 'KA',
+    'Meerbusch': 'MB'
+  };
+  const cityCode = cityMap[city] || city.substring(0, 2).toUpperCase();
+  
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const timestamp = `${year}${month}${day}${hours}${minutes}${seconds}`;
+  
+  const safe = str => str.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9_\-äöüÄÖÜß]/g, '');
+  const schoolSafe = safe(school);
+  
+  return `${cityCode}_${docType}_${schoolSafe}_${timestamp}`;
+}
+
+function updateFilenameDisplay() {
+  const filename = generateFilename();
+  const display = document.getElementById('filenameDisplay');
+  if(filename) {
+    display.textContent = `📄 ${filename}.pdf / ${filename}.csv`;
+    display.style.background = '#f0f8ff';
+  } else {
+    display.textContent = '📄 Dateiname wird automatisch generiert...';
+    display.style.background = '#f5f5f7';
+  }
+}
+
+['city', 'docType', 'schoolName'].forEach(id => {
+  document.getElementById(id).addEventListener('change', updateFilenameDisplay);
+});
+
+// Alert System
+function showAlert(message, type = 'success') {
+  const alertBox = document.getElementById('alertBox');
+  alertBox.className = `alert alert-${type}`;
+  alertBox.textContent = message;
+  alertBox.classList.remove('hidden');
+  setTimeout(() => alertBox.classList.add('hidden'), 3000);
+}
+
+// Piep-Ton
+function playBeep() {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+  } catch(e) {
+    console.log('Audio nicht verfügbar');
+  }
+}
+
+// Stats aktualisieren
+function updateStats() {
+  document.getElementById('scannedCount').textContent = scannedCount;
+  document.getElementById('csvCount').textContent = csvImportCount;
+  document.getElementById('manualCount').textContent = manualCount;
+  const tbody = document.getElementById('serialsTable').querySelector('tbody');
+  document.getElementById('tableCount').textContent = tbody.querySelectorAll('tr').length;
+}
+
+// Scanner starten
+async function startScanner() {
+  try {
+    const reader = document.getElementById('reader');
+    reader.classList.remove('hidden');
+    html5QrCode = new Html5Qrcode("reader");
+
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: { width: 280, height: 150 },
+        aspectRatio: 1.777778,
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E
+        ]
+      },
+      (decodedText) => {
+        if(scannedBarcodes.has(decodedText)) {
+          showAlert(`⚠️ Bereits gescannt: ${decodedText}`, 'warning');
+          return;
+        }
+        
+        document.getElementById('serialNumber').value = decodedText;
+        addDeviceToTable('scanned');
+        scannedBarcodes.add(decodedText);
+        
+        playBeep();
+        showAlert(`✅ Gescannt & gespeichert: ${decodedText}`, 'success');
+        scannedCount++;
+        updateStats();
+      },
+      (errorMessage) => {}
+    );
+    
+    isScanning = true;
+    document.getElementById('startScanBtn').classList.add('hidden');
+    document.getElementById('stopScanBtn').classList.remove('hidden');
+    showAlert('📷 Scanner aktiv - CODE_128 & QR optimiert', 'info');
+
+  } catch (err) {
+    showAlert('Fehler beim Starten der Kamera: ' + err, 'info');
+    console.error(err);
+  }
+}
+
+// Scanner stoppen
+async function stopScanner() {
+  if (html5QrCode && isScanning) {
+    await html5QrCode.stop();
+    document.getElementById('reader').classList.add('hidden');
+    isScanning = false;
+    document.getElementById('startScanBtn').classList.remove('hidden');
+    document.getElementById('stopScanBtn').classList.add('hidden');
+    showAlert('Scanner gestoppt', 'info');
+  }
+}
+
+document.getElementById('startScanBtn').addEventListener('click', startScanner);
+document.getElementById('stopScanBtn').addEventListener('click', stopScanner);
+
+// Signature
+const canvas = document.getElementById('signatureCanvas');
+const ctx = canvas.getContext('2d');
+let drawing=false, lastX=0, lastY=0;
+
+function getXYFromEvent(e){
+  const rect=canvas.getBoundingClientRect(); 
+  if(e.touches && e.touches[0]) {
+    return {
+      x: (e.touches[0].clientX - rect.left) * (canvas.width / rect.width),
+      y: (e.touches[0].clientY - rect.top) * (canvas.height / rect.height)
+    };
+  }
+  return {
+    x: (e.clientX - rect.left) * (canvas.width / rect.width),
+    y: (e.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
+canvas.addEventListener('mousedown', e=>{ drawing=true; const p=getXYFromEvent(e); lastX=p.x; lastY=p.y; });
+canvas.addEventListener('mousemove', e=>{ 
+  if(!drawing) return; 
+  const p=getXYFromEvent(e); 
+  ctx.strokeStyle='#000'; 
+  ctx.lineWidth=2; 
+  ctx.lineCap='round'; 
+  ctx.beginPath(); 
+  ctx.moveTo(lastX,lastY); 
+  ctx.lineTo(p.x,p.y); 
+  ctx.stroke(); 
+  lastX=p.x; 
+  lastY=p.y; 
+});
+canvas.addEventListener('mouseup', ()=>{ drawing=false; });
+canvas.addEventListener('mouseout', ()=>{ drawing=false; });
+canvas.addEventListener('touchstart', e=>{ 
+  e.preventDefault(); 
+  drawing=true; 
+  const p=getXYFromEvent(e); 
+  lastX=p.x; 
+  lastY=p.y; 
+});
+canvas.addEventListener('touchmove', e=>{ 
+  e.preventDefault(); 
+  if(!drawing) return; 
+  const p=getXYFromEvent(e); 
+  ctx.strokeStyle='#000'; 
+  ctx.lineWidth=2; 
+  ctx.lineCap='round'; 
+  ctx.beginPath(); 
+  ctx.moveTo(lastX,lastY); 
+  ctx.lineTo(p.x,p.y); 
+  ctx.stroke(); 
+  lastX=p.x; 
+  lastY=p.y; 
+});
+canvas.addEventListener('touchend', ()=>{ drawing=false; });
+
+function clearSignature(){ 
+  ctx.clearRect(0,0,canvas.width,canvas.height); 
+}
+
+function resetForm(){
+  document.getElementById('deliveryForm').reset();
+  clearSignature();
+  document.getElementById('serialsTable').querySelector('tbody').innerHTML='';
+  scannedCount = 0;
+  csvImportCount = 0;
+  manualCount = 0;
+  scannedBarcodes.clear();
+  allSerialNumbers.clear();
+  const today=new Date().toISOString().slice(0,10);
+  const delivery=document.getElementById('deliveryDate'); 
+  if(delivery) delivery.value=today;
+  updateFilenameDisplay();
+  updateStats();
+  setTimeout(()=>document.getElementById('serialNumber').focus(),50);
+}
+
+// Gerät zur Tabelle hinzufügen
+function addDeviceToTable(source = 'manual'){
+  const serial = document.getElementById('serialNumber').value.trim();
+  const deviceName = document.getElementById('deviceName').value.trim();
+  const teacherName = document.getElementById('teacherName').value.trim();
+  const schoolClass = document.getElementById('schoolClass').value.trim();
+  const notes = document.getElementById('notes').value.trim();
+  
+  if(!serial){
+    alert('Bitte Seriennummer eingeben');
+    return;
+  }
+  
+  if(allSerialNumbers.has(serial)) {
+    showAlert(`⚠️ Seriennummer ${serial} bereits in der Tabelle`, 'warning');
+    document.getElementById('serialNumber').value = '';
+    document.getElementById('serialNumber').focus();
+    return;
+  }
+  
+  const tbody = document.getElementById('serialsTable').querySelector('tbody');
+  const tr = document.createElement('tr');
+  
+  if(source === 'scanned') {
+    tr.classList.add('scanned-row');
+  }
+  
+  [serial, deviceName, teacherName, schoolClass, notes].forEach(v => {
+    const td = document.createElement('td');
+    td.textContent = v;
+    tr.appendChild(td);
+  });
+  
+  const tdAction = document.createElement('td');
+  tdAction.className = 'no-print';
+  const btnDel = document.createElement('button');
+  btnDel.textContent = '🗑️';
+  btnDel.className = 'btn-danger';
+  btnDel.style.padding = '4px 8px';
+  btnDel.onclick = () => {
+    allSerialNumbers.delete(serial);
+    tr.remove();
+    updateStats();
+  };
+  tdAction.appendChild(btnDel);
+  tr.appendChild(tdAction);
+  
+  tr.addEventListener('click', (e) => {
+    if(e.target.tagName === 'BUTTON') return;
+    document.getElementById('serialNumber').value = serial;
+    document.getElementById('deviceName').value = deviceName;
+    document.getElementById('teacherName').value = teacherName;
+    document.getElementById('schoolClass').value = schoolClass;
+    document.getElementById('notes').value = notes;
+  });
+  
+  tbody.appendChild(tr);
+  allSerialNumbers.add(serial);
+  
+  if(source === 'manual') manualCount++;
+  
+  document.getElementById('serialNumber').value = '';
+  document.getElementById('deviceName').value = '';
+  document.getElementById('notes').value = '';
+  updateStats();
+  document.getElementById('serialNumber').focus();
+}
+
+// CSV Import
+document.getElementById('csvFileInput').addEventListener('change', function(){
+  const f = this.files && this.files[0]; 
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = function(e){ parseCsv(e.target.result); }
+  reader.readAsText(f);
+  this.value='';
+});
+
+function parseCsv(text){
+  const lines = text.split(/\r?\n/);
+  const tbody = document.getElementById('serialsTable').querySelector('tbody');
+  let addedCount = 0;
+  let skippedCount = 0;
+  
+  lines.forEach(line => {
+    if(!line.trim()) return;
+    const cols = line.split(',');
+    const serial = cols[0] ? cols[0].trim() : '';
+    const type = cols[1] ? cols[1].trim() : '';
+    const student = cols[2] ? cols[2].trim() : '';
+    const klass = cols[3] ? cols[3].trim() : '';
+    const note = cols[4] ? cols[4].trim() : '';
+    
+    if(!serial) return;
+    
+    if(allSerialNumbers.has(serial)) {
+      skippedCount++;
+      return;
+    }
+    
+    const tr = document.createElement('tr');
+    [serial, type, student, klass, note].forEach(v => {
+      const td = document.createElement('td');
+      td.textContent = v;
+      tr.appendChild(td);
+    });
+    
+    const tdAction = document.createElement('td');
+    tdAction.className = 'no-print';
+    const btnDel = document.createElement('button');
+    btnDel.textContent = '🗑️';
+    btnDel.className = 'btn-danger';
+    btnDel.style.padding = '4px 8px';
+    btnDel.onclick = () => {
+      allSerialNumbers.delete(serial);
+      tr.remove();
+      updateStats();
+    };
+    tdAction.appendChild(btnDel);
+    tr.appendChild(tdAction);
+    
+    tr.addEventListener('click', (e) => {
+      if(e.target.tagName === 'BUTTON') return;
+      document.getElementById('serialNumber').value = serial;
+      document.getElementById('deviceName').value = type;
+      document.getElementById('teacherName').value = student;
+      document.getElementById('schoolClass').value = klass;
+      document.getElementById('notes').value = note;
+    });
+    
+    tbody.appendChild(tr);
+    allSerialNumbers.add(serial);
+    addedCount++;
+  });
+  
+  csvImportCount += addedCount;
+  updateStats();
+  
+  if(skippedCount > 0) {
+    showAlert(`✅ ${addedCount} importiert, ${skippedCount} Duplikate übersprungen`, 'info');
+  } else {
+    showAlert(`✅ ${addedCount} Einträge aus CSV importiert`, 'success');
+  }
+}
+
+// CSV Export
+document.getElementById('exportCsvBtn').addEventListener('click', function(){
+  const tbody = document.getElementById('serialsTable').querySelector('tbody');
+  const rows = tbody.querySelectorAll('tr');
+  
+  if(rows.length === 0){
+    alert('Keine Daten zum Exportieren');
+    return;
+  }
+  
+  const filename = generateFilename();
+  if(!filename){
+    alert('Bitte Stadt, Typ und Schulname auswählen');
+    return;
+  }
+  
+  const city = document.getElementById('city').value;
+  const docType = document.getElementById('docType').value;
+  const school = document.getElementById('schoolName').value;
+  const now = new Date();
+  
+  const csv = [
+    ['Seriennummer', 'Gerätetyp', 'Schüler/Empfänger', 'Klasse', 'Bemerkung', 'Quelle', 'Stadt', 'Typ', 'Schule', 'Export-Datum', 'Dateiname'],
+    ...Array.from(rows).map(row => {
+      const cells = row.querySelectorAll('td');
+      const serial = cells[0]?.textContent || '';
+      const isScanned = scannedBarcodes.has(serial);
+      const source = isScanned ? 'Gescannt' : 'Manuell/CSV';
+      
+      return [
+        serial,
+        cells[1]?.textContent || '',
+        cells[2]?.textContent || '',
+        cells[3]?.textContent || '',
+        cells[4]?.textContent || '',
+        source,
+        city,
+        docType,
+        school,
+        now.toLocaleString('de-DE'),
+        filename
+      ];
+    })
+  ].map(row => row.join(',')).join('\n');
+  
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${filename}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  showAlert(`✅ CSV exportiert: ${filename}.csv (${rows.length} Einträge)`, 'success');
+});
+
+// PDF speichern - iOS/iPad kompatibel
+document.getElementById('savePdfBtn').addEventListener('click', async function(){
+  const { jsPDF } = window.jspdf;
+  
+  const city = document.getElementById('city').value.trim();
+  const docType = document.getElementById('docType').value.trim();
+  const sname = document.getElementById('schoolName').value.trim();
+  
+  if(!city || !docType || !sname){
+    alert('Bitte Stadt, Typ (LS/AB) und Schulname auswählen!');
+    return;
+  }
+  
+  const tbody = document.getElementById('serialsTable').querySelector('tbody');
+  if(!tbody || !tbody.querySelector('tr')){
+    if(!confirm('Keine Seriennummern vorhanden. Trotzdem speichern?')) return;
+  }
+  
+  const filename = generateFilename();
+  if(!filename) {
+    alert('Fehler beim Generieren des Dateinamens');
+    return;
+  }
+  
+  const finalName = filename + '.pdf';
+  
+  try {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    
+    // Kopfbereich
+    pdf.setFontSize(20);
+    pdf.setTextColor(0, 122, 255);
+    pdf.text('📋 Lieferschein', 105, 20, { align: 'center' });
+    
+    pdf.setFontSize(11);
+    pdf.setTextColor(0, 0, 0);
+    let y = 35;
+    
+    // Stammdaten
+    pdf.setFontSize(10);
+    pdf.text(`Stadt: ${city}`, 15, y); y += 7;
+    pdf.text(`Typ: ${docType}`, 15, y); y += 7;
+    pdf.text(`Schule: ${sname}`, 15, y); y += 7;
+    pdf.text(`Ausgabedatum: ${document.getElementById('deliveryDate').value}`, 15, y); y += 7;
+    pdf.text(`Empfänger: ${document.getElementById('teacherName').value}`, 15, y); y += 7;
+    pdf.text(`Klasse/Abteilung: ${document.getElementById('schoolClass').value}`, 15, y); y += 10;
+    
+    // Statistik
+    pdf.setFontSize(9);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(`Gescannt: ${scannedCount} | CSV-Import: ${csvImportCount} | Manuell: ${manualCount}`, 15, y); y += 10;
+    
+    // Tabelle
+    pdf.setFontSize(12);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('Geräte / Seriennummern', 15, y); y += 8;
+    
+    const rows = tbody.querySelectorAll('tr');
+    
+    // Tabellenkopf
+    pdf.setFontSize(9);
+    pdf.setFillColor(245, 245, 247);
+    pdf.rect(15, y, 180, 7, 'F');
+    pdf.text('Seriennummer', 17, y + 5);
+    pdf.text('Gerätetyp', 70, y + 5);
+    pdf.text('Schüler', 110, y + 5);
+    pdf.text('Klasse', 150, y + 5);
+    y += 7;
+    
+    // Tabellenzeilen
+    pdf.setFontSize(8);
+    rows.forEach((row, index) => {
+      if(y > 260) {
+        pdf.addPage();
+        y = 20;
+      }
+      
+      const cells = row.querySelectorAll('td');
+      const serial = cells[0]?.textContent || '';
+      const type = cells[1]?.textContent || '';
+      const student = cells[2]?.textContent || '';
+      const klass = cells[3]?.textContent || '';
+      const note = cells[4]?.textContent || '';
+      
+      // Zebrastreifen
+      if(index % 2 === 0) {
+        pdf.setFillColor(250, 250, 250);
+        pdf.rect(15, y - 4, 180, 6, 'F');
+      }
+      
+      // Gescannte Zeilen grün markieren
+      if(scannedBarcodes.has(serial)) {
+        pdf.setFillColor(232, 245, 233);
+        pdf.rect(15, y - 4, 180, 6, 'F');
+      }
+      
+      pdf.text(serial.substring(0, 25), 17, y);
+      pdf.text(type.substring(0, 20), 70, y);
+      pdf.text(student.substring(0, 20), 110, y);
+      pdf.text(klass.substring(0, 15), 150, y);
+      
+      if(note) {
+        y += 5;
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(`Bem: ${note.substring(0, 70)}`, 17, y);
+        pdf.setFontSize(8);
+        pdf.setTextColor(0, 0, 0);
+      }
+      
+      y += 6;
+    });
+    
+    // Unterschrift
+    if(y > 230) {
+      pdf.addPage();
+      y = 20;
+    }
+    
+    y += 10;
+    pdf.setFontSize(10);
+    pdf.text('Unterschrift Schule:', 15, y); y += 5;
+    
+    // Canvas in PDF einbetten
+    const signatureCanvas = document.getElementById('signatureCanvas');
+    const signatureData = signatureCanvas.toDataURL('image/png');
+    
+    try {
+      pdf.addImage(signatureData, 'PNG', 15, y, 80, 20);
+    } catch(e) {
+      console.log('Unterschrift konnte nicht eingefügt werden:', e);
+    }
+    
+    // Metadaten-Seite (SICHTBAR für Spotlight-Indexierung)
+    pdf.addPage();
+    pdf.setFontSize(10);
+    pdf.setTextColor(0, 0, 0);
+    
+    y = 15;
+    pdf.text(`DOKUMENT-METADATEN`, 15, y); y += 10;
+    
+    pdf.setFontSize(9);
+    pdf.text(`Original-Dateiname: ${filename}`, 15, y); y += 7;
+    pdf.text(`Stadt: ${city}`, 15, y); y += 7;
+    pdf.text(`Dokumenttyp: ${docType}`, 15, y); y += 7;
+    pdf.text(`Schule: ${sname}`, 15, y); y += 7;
+    pdf.text(`Ausgabedatum: ${document.getElementById('deliveryDate').value}`, 15, y); y += 7;
+    pdf.text(`Empfänger: ${document.getElementById('teacherName').value}`, 15, y); y += 7;
+    pdf.text(`Klasse/Abteilung: ${document.getElementById('schoolClass').value}`, 15, y); y += 7;
+    pdf.text(`Erstellt am: ${new Date().toLocaleString('de-DE')}`, 15, y); y += 7;
+    pdf.text(`Statistik: Gescannt ${scannedCount}, CSV ${csvImportCount}, Manuell ${manualCount}`, 15, y); y += 10;
+    
+    // Suchbegriffe für Spotlight
+    pdf.setFontSize(8);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(`Suchbegriffe: ${filename} ${city} ${docType} ${sname} Lieferschein Schulgeräte`, 15, y); y += 10;
+    
+    // Alle Seriennummern (SICHTBAR)
+    pdf.setFontSize(9);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(`ALLE SERIENNUMMERN (${rows.length} Einträge)`, 15, y); y += 7;
+    
+    rows.forEach((row, index) => {
+      const cells = row.querySelectorAll('td');
+      if(cells.length >= 5){
+        const serial = cells[0].textContent.trim();
+        const type = cells[1].textContent.trim();
+        const student = cells[2].textContent.trim();
+        const klass = cells[3].textContent.trim();
+        const note = cells[4].textContent.trim();
+        
+        const isScanned = scannedBarcodes.has(serial);
+        const source = isScanned ? '[GESCANNT]' : '[MANUELL]';
+        
+        pdf.setFontSize(8);
+        pdf.text(`${index + 1}. ${source} ${serial}`, 15, y); y += 5;
+        if(type) { pdf.setFontSize(7); pdf.text(`   Typ: ${type}`, 15, y); y += 4; }
+        if(student) { pdf.text(`   Schüler: ${student}`, 15, y); y += 4; }
+        if(klass) { pdf.text(`   Klasse: ${klass}`, 15, y); y += 4; }
+        if(note) { pdf.text(`   Bemerkung: ${note}`, 15, y); y += 4; }
+        y += 3;
+        
+        if(y > 270){
+          pdf.addPage();
+          pdf.setFontSize(9);
+          pdf.setTextColor(0, 0, 0);
+          y = 15;
+          pdf.text(`Original-Dateiname: ${filename} (Fortsetzung)`, 15, y); y += 10;
+        }
+      }
+    });
+    
+    // Gescannte Barcodes (SICHTBAR)
+    if(scannedBarcodes.size > 0) {
+      if(y > 250) {
+        pdf.addPage();
+        y = 15;
+        pdf.setFontSize(9);
+        pdf.text(`Original-Dateiname: ${filename}`, 15, 15);
+        y = 25;
+      }
+      
+      pdf.setFontSize(9);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`GESCANNTE BARCODES (${scannedBarcodes.size} Stück)`, 15, y); y += 7;
+      
+      pdf.setFontSize(8);
+      Array.from(scannedBarcodes).forEach((barcode, i) => {
+        pdf.text(`${i + 1}. ${barcode}`, 15, y); y += 5;
+        if(y > 280) {
+          pdf.addPage();
+          pdf.setFontSize(9);
+          pdf.text(`Original-Dateiname: ${filename} (Fortsetzung)`, 15, 15);
+          y = 25;
+          pdf.setFontSize(8);
+        }
+      });
+    }
+    
+    // PDF-Eigenschaften (erweitert für bessere Auffindbarkeit)
+    const allSerials = Array.from(rows).map(r => r.querySelector('td')?.textContent || '').filter(s => s).join(' ');
+    const searchableText = `${filename} ${city} ${docType} ${sname} ${document.getElementById('teacherName').value} ${allSerials}`;
+    
+    pdf.setProperties({
+      title: `${filename} - ${sname}`,
+      subject: `${docType} ${sname} ${city}`,
+      author: `${sname} - ${document.getElementById('teacherName').value}`,
+      keywords: searchableText,
+      creator: `Lieferschein-System - Original: ${filename}`
+    });
+    
+    // PDF speichern
+    pdf.save(finalName);
+    
+    showAlert(`✅ PDF erstellt: ${finalName} (${rows.length} Einträge)`, 'success');
+    
+  } catch(err) {
+    console.error('PDF-Fehler:', err);
+    alert(`Fehler beim Erstellen des PDFs: ${err.message}\n\nTipp: Verwenden Sie "Als CSV exportieren" als Alternative.`);
+  }
+});
+
+// Enter-Taste zum Hinzufügen
+document.getElementById('serialNumber').addEventListener('keypress', function(e){
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    addDeviceToTable();
+  }
+});
+</script>
+</body>
+</html>
